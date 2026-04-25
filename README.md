@@ -103,6 +103,14 @@ buildFloorCarpet(hm, { color?, opacity? })
   → THREE.Mesh   wireframe debug viz of the heightmap
 ```
 
+## Roadmap
+
+This is the first release in a longer effort to make characters aware of Gaussian-splat scenes the way they're aware of hand-authored worlds.
+
+- **V1 (this release) — Floor awareness.** Character knows where the ground is, follows changes in it (slopes, raised areas, things that protrude from the floor).
+- **V2 — Artefact correction.** Splat reconstructions contain floating wisps and ghost ellipsoids; V2 distinguishes real geometry from noise so the "blocked vs walkable" signal is clean.
+- **V3+ — Object segmentation.** Recognise discrete objects in the splat (chair, door, table, jukebox) so a character can sit, open, pick up — i.e. *interact* with the scene, not just walk through it.
+
 ## Limitations
 
 This is a **single-floor** approximation: `z = f(x, y)`, one Z per xy.

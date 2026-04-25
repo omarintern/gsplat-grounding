@@ -165,18 +165,26 @@
       on a separately shipped collision mesh.
     </p>
     <p>
-      <strong>gsplat-grounding</strong> derives a usable floor surface directly from the
-      splat itself, in the browser, at load time. We sample where the splats are,
-      figure out which ones make up the floor, and use that as the surface a
-      character walks on. While the character is on their feet — walking,
-      standing, idling — whichever part of their body is lowest gets snapped to
-      that surface, so the planted foot stays planted and the swing foot lifts
-      naturally. (Jumps, falls and other airborne movement are the caller's
-      concern: stop snapping during the airborne phase, resume on landing.)
+      This release is the first step in a longer arc: making characters
+      <em>aware</em> of Gaussian-splat scenes the way they're aware of
+      hand-authored worlds. A splat is a single bag of fuzzy ellipsoids;
+      teaching it to behave like floors, obstacles, and interactive objects
+      is the work.
+    </p>
+    <p>
+      <strong>V1 — this release — gives a character floor awareness.</strong>
+      We sample where the splats are, figure out which ones make up the
+      ground, and use that as the surface the character walks on. They
+      follow slopes, climb raised areas, get stuck against things that
+      protrude from the floor. While they're on their feet — walking,
+      standing, idling — whichever part of their body is lowest snaps to
+      that surface, so planted foot stays planted and swing foot lifts
+      naturally. (Jumps and falls are the caller's concern: stop snapping
+      during the airborne phase, resume on landing.)
     </p>
     <p>
       The whole library is one short JavaScript file. It works with any splat
-      file the popular <a href="https://github.com/mkkellogg/GaussianSplats3D">three.js splat renderer</a>
+      the popular <a href="https://github.com/mkkellogg/GaussianSplats3D">three.js splat renderer</a>
       can read (<code>.spz</code>, <code>.ply</code>, <code>.splat</code>, <code>.ksplat</code>),
       and with any rigged character — Mixamo or otherwise.
     </p>
@@ -368,6 +376,40 @@ function tick() {
       stairs and balconies needs a multi-Z heightmap (store all dense z-bands per cell;
       walker picks the band closest to its current z). On the roadmap.
     </p>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="container">
+    <h2>Roadmap</h2>
+    <p>
+      Floor awareness is the first piece. A character that knows where they
+      can stand is a foundation for the rest: knowing what blocks their path,
+      knowing what they can interact with. The roadmap below is what comes
+      after V1.
+    </p>
+    <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px;">
+      <div class="card" style="border-color: var(--accent)">
+        <div class="label" style="color: var(--accent)">V1 · this release</div>
+        <p style="margin: 0;"><strong>Floor awareness.</strong> Character knows
+        where the ground is and follows changes in it — slopes, raised
+        platforms, low obstacles that protrude from the floor.</p>
+      </div>
+      <div class="card" style="border-color: var(--accent-2)">
+        <div class="label" style="color: var(--accent-2)">V2 · next</div>
+        <p style="margin: 0;"><strong>Artefact correction.</strong> Splat
+        reconstructions contain floating wisps and ghost ellipsoids that look
+        like real surfaces but aren't. V2 distinguishes real geometry from
+        noise, so blocked-space and walkable-space are clean signals.</p>
+      </div>
+      <div class="card" style="border-color: #9aa6c0">
+        <div class="label" style="color: #9aa6c0">V3+ · future</div>
+        <p style="margin: 0;"><strong>Object segmentation.</strong> Recognise
+        the chair, the door, the jukebox as discrete objects. Build the bridge
+        from "scene with stuff in it" to "things a character can sit on, open,
+        pick up." Groundwork for character interaction in splat scenes.</p>
+      </div>
+    </div>
   </div>
 </section>
 

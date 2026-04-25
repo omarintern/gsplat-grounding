@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+._*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Build / vendor
+node_modules/
+dist/
+
+# Splat assets (bring your own — don't ship private/proprietary splats)
+*.spz
+*.ply
+*.splat
+*.ksplat
+*.glb
+*.gltf
+
+# Secrets
+.env
+*.pem

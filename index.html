@@ -388,22 +388,31 @@ function tick() {
       knowing what they can interact with. The roadmap below is what comes
       after V1.
     </p>
-    <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px;">
+    <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 18px;">
       <div class="card" style="border-color: var(--accent)">
         <div class="label" style="color: var(--accent)">V1 · this release</div>
         <p style="margin: 0;"><strong>Floor awareness.</strong> Character knows
         where the ground is and follows changes in it — slopes, raised
-        platforms, low obstacles that protrude from the floor.</p>
+        platforms, low obstacles that protrude from the floor. Kinematic snap:
+        the lowest part of the body is forced onto the heightmap every frame.</p>
       </div>
       <div class="card" style="border-color: var(--accent-2)">
         <div class="label" style="color: var(--accent-2)">V2 · next</div>
+        <p style="margin: 0;"><strong>Physics dynamics on the heightmap.</strong>
+        Replace the kinematic snap with a one-sided collision against the
+        heightmap, plus gravity on the character's pivot. Unlocks jumps,
+        falls, knockbacks, dives — anything airborne. The heightmap stops
+        being a constraint and becomes collision geometry.</p>
+      </div>
+      <div class="card" style="border-color: #cfa84d">
+        <div class="label" style="color: #cfa84d">V3 · later</div>
         <p style="margin: 0;"><strong>Artefact correction.</strong> Splat
         reconstructions contain floating wisps and ghost ellipsoids that look
-        like real surfaces but aren't. V2 distinguishes real geometry from
-        noise, so blocked-space and walkable-space are clean signals.</p>
+        like real surfaces but aren't. V3 distinguishes real geometry from
+        noise so the blocked-space and walkable-space signals are clean.</p>
       </div>
       <div class="card" style="border-color: #9aa6c0">
-        <div class="label" style="color: #9aa6c0">V3+ · future</div>
+        <div class="label" style="color: #9aa6c0">V4+ · future</div>
         <p style="margin: 0;"><strong>Object segmentation.</strong> Recognise
         the chair, the door, the jukebox as discrete objects. Build the bridge
         from "scene with stuff in it" to "things a character can sit on, open,

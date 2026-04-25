@@ -107,9 +107,10 @@ buildFloorCarpet(hm, { color?, opacity? })
 
 This is the first release in a longer effort to make characters aware of Gaussian-splat scenes the way they're aware of hand-authored worlds.
 
-- **V1 (this release) — Floor awareness.** Character knows where the ground is, follows changes in it (slopes, raised areas, things that protrude from the floor).
-- **V2 — Artefact correction.** Splat reconstructions contain floating wisps and ghost ellipsoids; V2 distinguishes real geometry from noise so the "blocked vs walkable" signal is clean.
-- **V3+ — Object segmentation.** Recognise discrete objects in the splat (chair, door, table, jukebox) so a character can sit, open, pick up — i.e. *interact* with the scene, not just walk through it.
+- **V1 (this release) — Floor awareness.** Character knows where the ground is, follows changes in it (slopes, raised areas, things that protrude from the floor). Kinematic: the lowest body vertex is forced onto the heightmap every frame.
+- **V2 — Physics dynamics on the heightmap.** Replace the kinematic snap with a one-sided collision against the heightmap plus gravity on the character's pivot. Unlocks jumps, falls, knockbacks, dives — any airborne motion. The heightmap stops being a constraint and becomes collision geometry.
+- **V3 — Artefact correction.** Splat reconstructions contain floating wisps and ghost ellipsoids; V3 distinguishes real geometry from noise so the blocked-vs-walkable signal is clean.
+- **V4+ — Object segmentation.** Recognise discrete objects in the splat (chair, door, jukebox) so a character can sit, open, pick up — i.e. *interact* with the scene, not just walk through it.
 
 ## Limitations
 

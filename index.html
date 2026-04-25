@@ -2,62 +2,373 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>gsplat-grounding · demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>gsplat-grounding · runtime collider extraction from Gaussian splats</title>
+<meta name="description" content="Drop a Mixamo-rigged character into any Gaussian-splat scene and have them walk on the visible floor — no authored collider mesh, all derived in-browser at runtime from splat density." />
+<meta property="og:title" content="gsplat-grounding" />
+<meta property="og:description" content="Runtime collider extraction from Gaussian splat density. Same .spz acts as both the visual environment and the collision source." />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
+  :root {
+    --bg: #0f1115;
+    --bg-2: #161922;
+    --fg: #e7eaf0;
+    --fg-dim: #8a92a3;
+    --accent: #8ad6c3;
+    --accent-2: #e8a84d;
+    --code-bg: #14171f;
+    --border: #232734;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: #0d0e11; color: #d9dde5;
-               font-family: 'JetBrains Mono', ui-monospace, monospace; overflow: hidden; }
-  #canvas-wrap { position: fixed; inset: 0; }
-  canvas { display: block; }
-  #hud {
-    position: fixed; top: 16px; left: 16px;
-    background: rgba(20, 22, 27, 0.85); border: 1px solid #22252c;
-    border-radius: 10px; padding: 12px 16px; font-size: 11px;
-    color: #d9dde5; backdrop-filter: blur(8px); max-width: 380px; line-height: 1.6;
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    background: var(--bg); color: var(--fg);
+    line-height: 1.65; -webkit-font-smoothing: antialiased;
   }
-  #hud .title { color: #8ad6c3; font-weight: bold; margin-bottom: 6px; font-size: 12px; letter-spacing: 0.05em; }
-  #hud a { color: #e8a84d; text-decoration: none; }
-  #hud a:hover { text-decoration: underline; }
-  #hud button {
-    background: #1a1d23; color: #d9dde5; border: 1px solid #22252c;
-    border-radius: 5px; padding: 4px 10px; font: inherit; font-size: 11px;
-    cursor: pointer; margin-right: 4px;
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.88em; color: #e7d18a; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 20px; overflow-x: auto; font-size: 0.86em; line-height: 1.55;
+    color: var(--fg);
   }
-  #hud button:hover { background: #22252c; border-color: #8ad6c3; }
-  #hud .row { margin-top: 6px; }
-  #hud .dim { opacity: 0.6; }
-  #drop {
-    position: fixed; inset: 0; pointer-events: none;
+  pre code { background: transparent; padding: 0; color: inherit; }
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+  /* Hero */
+  header.hero {
+    padding: 72px 24px 48px; text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  header.hero h1 {
+    font-size: 44px; font-weight: 700; letter-spacing: -0.02em;
+    margin-bottom: 12px; color: #fff;
+  }
+  header.hero .tag {
+    color: var(--fg-dim); font-size: 18px; max-width: 640px; margin: 0 auto 28px;
+  }
+  header.hero .links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 18px; border-radius: 8px; font-size: 14px; font-weight: 500;
+    background: var(--bg-2); color: var(--fg); border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .btn:hover { background: var(--border); border-color: var(--accent); text-decoration: none; }
+  .btn.primary { background: var(--accent); color: #0a0c10; border-color: var(--accent); }
+  .btn.primary:hover { background: #a3e3d4; border-color: #a3e3d4; }
+
+  /* Sections */
+  section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: 0; }
+  section h2 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 0.18em;
+    color: var(--accent-2); margin-bottom: 16px; font-weight: 600;
+  }
+  section h3 {
+    font-size: 22px; font-weight: 600; margin: 24px 0 10px; color: #fff;
+  }
+  section p { margin-bottom: 14px; color: var(--fg); }
+  section ul { padding-left: 22px; margin-bottom: 14px; }
+  section li { margin-bottom: 6px; }
+
+  /* Teaser canvas */
+  .teaser {
+    margin: 0 0 28px;
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    background: var(--bg-2); aspect-ratio: 16 / 9;
     display: flex; align-items: center; justify-content: center;
-    background: rgba(0, 0, 0, 0.7); color: #8ad6c3; font-size: 18px;
-    opacity: 0; transition: opacity 0.15s ease-out;
+    position: relative;
   }
-  #drop.active { opacity: 1; }
-  code { background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px; font-size: 10px; }
+  .teaser .placeholder {
+    color: var(--fg-dim); font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; text-align: center; padding: 20px;
+  }
+  .teaser img, .teaser video {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+
+  /* SVG diagram */
+  .diagram {
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px; margin: 24px 0; overflow: hidden;
+  }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  .caption {
+    color: var(--fg-dim); font-size: 13px; margin-top: 12px; text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Two-column for limits / pros */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 18px 0; }
+  .card {
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .card .label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--fg-dim); margin-bottom: 8px;
+  }
+  .card.ok .label { color: var(--accent); }
+  .card.no .label { color: #d76b5a; }
+
+  /* Footer */
+  footer {
+    padding: 36px 24px; text-align: center; color: var(--fg-dim);
+    font-size: 13px; border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 600px) {
+    header.hero { padding: 56px 16px 36px; }
+    header.hero h1 { font-size: 32px; }
+    .grid { grid-template-columns: 1fr; }
+  }
 </style>
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
-    "@mkkellogg/gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/+esm"
-  }
-}
-</script>
 </head>
 <body>
-<div id="canvas-wrap"></div>
-<div id="hud">
-  <div class="title">gsplat-grounding · demo</div>
-  Drop a Gaussian-splat file (<code>.spz</code>, <code>.ply</code>, <code>.splat</code>, <code>.ksplat</code>) onto the window.
-  A capsule character will walk back and forth on the floor the lib derives from your splat.
-  <div class="row" id="status">no splat loaded</div>
-  <div class="row"><button id="toggleCarpet">toggle floor carpet</button></div>
-  <div class="row dim">orbit: drag · zoom: scroll · pan: right-drag</div>
-  <div class="row dim"><a href="https://github.com/rumaihi111/gsplat-grounding">github →</a></div>
-</div>
-<div id="drop">drop a splat file to load</div>
-<script type="module" src="./src/main.js"></script>
+
+<header class="hero">
+  <div class="container">
+    <h1>gsplat-grounding</h1>
+    <p class="tag">
+      Drop a character into a Gaussian-splat scene and have them walk on the visible floor —
+      no authored collider, no preprocessing. The same <code>.spz</code> acts as both the
+      visual environment and the collision source.
+    </p>
+    <div class="links">
+      <a class="btn primary" href="./demo.html">▶ Try the demo</a>
+      <a class="btn" href="https://github.com/rumaihi111/gsplat-grounding">★ GitHub</a>
+      <a class="btn" href="#how-it-works">How it works</a>
+    </div>
+  </div>
+</header>
+
+<section id="abstract">
+  <div class="container">
+    <h2>Abstract</h2>
+    <div class="teaser">
+      <div class="placeholder">
+        <div style="font-size: 24px; margin-bottom: 8px;">▶</div>
+        <div>teaser video — record from the live demo and drop into <code>docs/teaser.mp4</code></div>
+      </div>
+    </div>
+    <p>
+      Gaussian-splatting captures look great but are notoriously hard to animate against —
+      a splat is a cloud of fuzzy ellipsoids, not a manifold mesh. Today, putting a
+      character into a splat scene means hand-authoring a collider in Blender, or relying
+      on a separately shipped collision mesh.
+    </p>
+    <p>
+      <strong>gsplat-grounding</strong> derives a usable floor surface directly from the
+      splat itself, in the browser, at load time. A small heightmap is built by sampling
+      splat-centroid density: per cell, take the top of the lowest 15% of nearby splats —
+      that's the visible floor. Per frame, snap the character's lowest live skinned
+      vertex to the heightmap. Whichever foot is lower at this instant of the walk cycle
+      stays planted on the ground.
+    </p>
+    <p>
+      The library is a single <code>splat-grounding.js</code> module exposing five
+      functions. It works with any splat <a href="https://github.com/mkkellogg/GaussianSplats3D">@mkkellogg/gaussian-splats-3d</a>
+      can decode (.spz, .ply, .splat, .ksplat) and any character that
+      <code>three.js</code>'s <code>Box3.setFromObject(obj, true)</code> can bound.
+    </p>
+  </div>
+</section>
+
+<section id="how-it-works">
+  <div class="container">
+    <h2>How it works</h2>
+
+    <h3>Step 1 — Sample splat centroids</h3>
+    <p>
+      Iterate the splat's centers via <code>splatMesh.getSplatCenter(i, vec)</code>
+      (mkkellogg API). Stride down to ~30k samples in world space. Each sample is one
+      Gaussian's mean position — collectively they outline every visible surface.
+    </p>
+
+    <h3>Step 2 — Build the heightmap</h3>
+    <div class="diagram">
+      <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" font-family="JetBrains Mono, monospace" font-size="11">
+        <!-- floor splats (low z) -->
+        <g fill="#8ad6c3" opacity="0.85">
+          <circle cx="60"  cy="200" r="3"/>
+          <circle cx="100" cy="198" r="3"/>
+          <circle cx="140" cy="202" r="3"/>
+          <circle cx="180" cy="199" r="3"/>
+          <circle cx="220" cy="201" r="3"/>
+          <circle cx="260" cy="200" r="3"/>
+          <circle cx="300" cy="198" r="3"/>
+          <circle cx="340" cy="201" r="3"/>
+          <circle cx="380" cy="199" r="3"/>
+          <circle cx="420" cy="202" r="3"/>
+          <circle cx="460" cy="200" r="3"/>
+          <circle cx="500" cy="198" r="3"/>
+          <circle cx="540" cy="201" r="3"/>
+          <circle cx="580" cy="199" r="3"/>
+          <circle cx="620" cy="200" r="3"/>
+          <circle cx="660" cy="198" r="3"/>
+        </g>
+        <!-- furniture splats (mid z) -->
+        <g fill="#e8a84d" opacity="0.85">
+          <circle cx="80"  cy="160" r="3"/>
+          <circle cx="120" cy="155" r="3"/>
+          <circle cx="160" cy="158" r="3"/>
+          <circle cx="380" cy="150" r="3"/>
+          <circle cx="420" cy="145" r="3"/>
+          <circle cx="460" cy="148" r="3"/>
+          <circle cx="500" cy="155" r="3"/>
+        </g>
+        <!-- ceiling splats (high z) -->
+        <g fill="#9aa6c0" opacity="0.6">
+          <circle cx="60"  cy="60" r="3"/>
+          <circle cx="120" cy="58" r="3"/>
+          <circle cx="200" cy="62" r="3"/>
+          <circle cx="280" cy="60" r="3"/>
+          <circle cx="360" cy="58" r="3"/>
+          <circle cx="440" cy="62" r="3"/>
+          <circle cx="520" cy="60" r="3"/>
+          <circle cx="600" cy="58" r="3"/>
+        </g>
+        <!-- gather radius -->
+        <circle cx="200" cy="200" r="40" fill="none" stroke="#8ad6c3" stroke-dasharray="3 3" opacity="0.6"/>
+        <text x="200" y="234" text-anchor="middle" fill="#8a92a3">gather radius</text>
+        <!-- selected cell heightmap line -->
+        <line x1="160" y1="200" x2="240" y2="200" stroke="#33ff66" stroke-width="2" opacity="0.9"/>
+        <text x="270" y="204" fill="#33ff66">p15 → cell floor z</text>
+        <!-- legend -->
+        <g transform="translate(20, 14)">
+          <circle cx="6" cy="6" r="3" fill="#8ad6c3"/><text x="14" y="9" fill="#8a92a3">floor splats</text>
+          <circle cx="6" cy="22" r="3" fill="#e8a84d"/><text x="14" y="25" fill="#8a92a3">furniture / booth bases</text>
+          <circle cx="6" cy="38" r="3" fill="#9aa6c0" opacity="0.6"/><text x="14" y="41" fill="#8a92a3">ceiling / above</text>
+        </g>
+      </svg>
+      <div class="caption">For every cell, sort all nearby splats by Z and take p15 (top of the lowest 15%). Sub-floor outliers fall below; furniture and ceilings sit above. Empty cells are filled from neighbours.</div>
+    </div>
+
+    <h3>Step 3 — Per frame, snap the character</h3>
+    <p>
+      Update your <code>AnimationMixer</code> first so bones reflect the current frame's
+      pose. Then bilinear-sample the heightmap at the character's <code>(x, y)</code>,
+      compute the live skinned bbox via <code>Box3.setFromObject(walker, true)</code>
+      (precise mode transforms every skinned vertex to world space), and shift
+      <code>walker.position.z</code> so <code>bbox.min.z === floorZ</code>. Whichever
+      foot is lowest at this instant plants on the floor; the swing foot lifts naturally.
+    </p>
+  </div>
+</section>
+
+<section id="results">
+  <div class="container">
+    <h2>Results</h2>
+    <div class="teaser">
+      <div class="placeholder">
+        <div style="font-size: 24px; margin-bottom: 8px;">▶</div>
+        <div>example: character walking through a generated diner splat</div>
+      </div>
+    </div>
+    <p>
+      Tested on Marble Labs splats (indoor restaurants, halls, captures) and on
+      mkkellogg's published demo scenes. Single-floor flat-ish indoor spaces are the
+      strongest case. The library handles mild slopes in the captured floor by
+      following them — the character traces the splat-derived terrain.
+    </p>
+  </div>
+</section>
+
+<section id="api">
+  <div class="container">
+    <h2>API</h2>
+    <p>The library is one file. Five functions:</p>
+<pre><code>import {
+  sampleSplatCenters,   // pull centroids out of an mkkellogg splatMesh
+  buildSplatFloorHM,    // build the 2D floor heightmap once
+  sampleSplatFloor,     // bilinear lookup at (x, y)
+  groundCharacter,      // per-frame: snap walker to heightmap
+  buildFloorCarpet,     // wireframe debug viz of the heightmap
+} from './splat-grounding.js';
+
+const samples = sampleSplatCenters(viewer.splatMesh, 30000);
+const floorHM = buildSplatFloorHM(samples);
+
+function tick() {
+  mixer.update(dt);
+  groundCharacter(walker, floorHM);
+  renderer.render(scene, camera);
+}</code></pre>
+    <p style="margin-top: 16px;">Full API reference and option flags in the <a href="https://github.com/rumaihi111/gsplat-grounding#api">README</a>.</p>
+  </div>
+</section>
+
+<section id="strengths-limits">
+  <div class="container">
+    <h2>Strengths and limits</h2>
+    <div class="grid">
+      <div class="card ok">
+        <div class="label">✓ works for</div>
+        <ul>
+          <li>flat-ish indoor floors (rooms, galleries, restaurants)</li>
+          <li>outdoor terrain with smooth elevation</li>
+          <li>any rig <code>three.js</code> can bound (Mixamo, custom)</li>
+          <li>any splat format <code>@mkkellogg/gaussian-splats-3d</code> decodes</li>
+          <li>zero preprocessing, zero authored assets</li>
+        </ul>
+      </div>
+      <div class="card no">
+        <div class="label">✗ doesn't handle</div>
+        <ul>
+          <li>multi-floor environments (stairs, balconies)</li>
+          <li>walking under tables / overhangs</li>
+          <li>walls / lateral collision (only floor)</li>
+          <li>very sparse splats (&lt;8 samples per cell)</li>
+        </ul>
+      </div>
+    </div>
+    <p>
+      The single-floor limit is fundamental to <code>z = f(x, y)</code> — extending to
+      stairs and balconies needs a multi-Z heightmap (store all dense z-bands per cell;
+      walker picks the band closest to its current z). On the roadmap.
+    </p>
+  </div>
+</section>
+
+<section id="credits">
+  <div class="container">
+    <h2>Built on</h2>
+    <ul>
+      <li><a href="https://github.com/mkkellogg/GaussianSplats3D">@mkkellogg/gaussian-splats-3d</a> — does all the splat decoding, sorting, and rasterization. We only consume <code>splatMesh.getSplatCenter()</code>.</li>
+      <li><a href="https://threejs.org/">three.js</a> — renderer, <code>Box3.setFromObject(obj, true)</code> (precise skinned bbox), <code>AnimationMixer</code>.</li>
+      <li>Mixamo — the demo character rig and walk animation (the actual <code>.glb</code> isn't shipped; bring your own).</li>
+    </ul>
+  </div>
+</section>
+
+<section id="cite">
+  <div class="container">
+    <h2>If you use this</h2>
+    <p>
+      MIT-licensed, no attribution required, but a link back is appreciated:
+    </p>
+<pre><code>@misc{rumaihi2026gsplatgrounding,
+  author       = {Rumaihi, Omar},
+  title        = {gsplat-grounding: runtime collider extraction from Gaussian-splat density},
+  year         = {2026},
+  howpublished = {\url{https://github.com/rumaihi111/gsplat-grounding}},
+}</code></pre>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    MIT-licensed. Built with three.js + @mkkellogg/gaussian-splats-3d.
+    <a href="https://github.com/rumaihi111/gsplat-grounding">github</a> ·
+    <a href="./demo.html">live demo</a>
+  </div>
+</footer>
+
 </body>
 </html>

@@ -54,6 +54,14 @@ Need to debug? Drop the carpet into your scene:
 scene.add(buildFloorCarpet(floorHM));   // green wireframe over the derived floor
 ```
 
+## What we tried — and what we found
+
+Three options were on the table for "where does the character stand."
+
+1. **Marble Labs' collider mesh.** Tempting, since it ships alongside every splat. But that mesh is authored for **first-person camera collision** — don't fly through walls, don't fall through the world. Its lowest top-facing polygon at any (x, y) is whatever the camera could land on, which includes booth seats, stool feet, and table tops. A character grounded on it climbs onto furniture instead of walking the aisle.
+2. **No floor proxy.** Pick a sensible constant Z by eye, plant the character there. Beats option 1 for character navigation (at least nothing climbs furniture) but misses the splat's per-gaussian ripple — the visible floor isn't a perfectly flat plane. A constant Z lets feet sink in the dips and float over the rises.
+3. **Splat heightmap (this lib).** Sample the splat directly. Per (x, y), gather nearby splat centroids and take the top of the lowest 15% — the visible floor surface, not the camera-collision boundary. Tracks the ripples, ignores furniture (it sits above the floor band), needs nothing authored. The same `.spz` is the visual *and* the floor.
+
 ## How it works
 
 ### Build the heightmap (once, at load)

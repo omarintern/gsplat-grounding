@@ -191,6 +191,57 @@
   </div>
 </section>
 
+<section id="findings">
+  <div class="container">
+    <h2>What we tried — and what we found</h2>
+    <p>
+      Three options were on the table for "where does the character stand."
+      Each one fails or succeeds for its own specific reason. The middle one
+      explains why we couldn't just lean on what Marble Labs already provides;
+      the third is what V1 ships.
+    </p>
+    <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px;">
+      <div class="card no">
+        <div class="label">approach 1 — collider mesh</div>
+        <p style="margin: 0;">
+          Marble Labs ships a polygon collider mesh alongside every splat.
+          Tempting to use it as the floor source — except <strong>that mesh
+          is authored for first-person camera collision</strong> (don't fly
+          through walls, don't fall through the world), not character
+          grounding. Its lowest top-facing polygon at any (x, y) is whatever
+          the camera could land on — booth seats, stool feet, table tops.
+          A character grounded on it climbs onto furniture instead of
+          walking the aisle.
+        </p>
+      </div>
+      <div class="card">
+        <div class="label">approach 2 — no floor proxy</div>
+        <p style="margin: 0;">
+          Pick a sensible constant Z by eye, plant the character there. No
+          per-(x,y) lookup, no collision against anything. <strong>Beats the
+          collider mesh</strong> for character navigation — at least the
+          character doesn't climb seats. But the splat's floor isn't a
+          perfectly flat plane: per-gaussian Z noise and reconstruction
+          drift mean the visible surface ripples a few centimetres up and
+          down. A constant Z misses those ripples; feet sink in the dips
+          and float over the rises.
+        </p>
+      </div>
+      <div class="card ok">
+        <div class="label">approach 3 — splat heightmap (V1)</div>
+        <p style="margin: 0;">
+          Sample the splat itself for the floor. Per (x, y), gather nearby
+          splats and take the top of the lowest 15% — the visible floor
+          surface, not the camera-collision boundary. <strong>Tracks the
+          ripples</strong> per-(x,y), ignores furniture (which sits well
+          above the floor band), and needs nothing authored. The same
+          <code>.spz</code> is the visual <em>and</em> the floor.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section id="how-it-works">
   <div class="container">
     <h2>How it works</h2>

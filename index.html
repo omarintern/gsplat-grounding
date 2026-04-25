@@ -166,17 +166,17 @@
     </p>
     <p>
       <strong>gsplat-grounding</strong> derives a usable floor surface directly from the
-      splat itself, in the browser, at load time. A small heightmap is built by sampling
-      splat-centroid density: per cell, take the top of the lowest 15% of nearby splats —
-      that's the visible floor. Per frame, snap the character's lowest live skinned
-      vertex to the heightmap. Whichever foot is lower at this instant of the walk cycle
-      stays planted on the ground.
+      splat itself, in the browser, at load time. We sample where the splats are,
+      figure out which ones make up the floor, and use that as the surface a
+      character walks on. Each frame, whichever foot is lowest gets snapped to
+      that surface — so the planted foot stays planted, the swing foot lifts
+      naturally, and the character doesn't float or sink.
     </p>
     <p>
-      The library is a single <code>splat-grounding.js</code> module exposing five
-      functions. It works with any splat <a href="https://github.com/mkkellogg/GaussianSplats3D">@mkkellogg/gaussian-splats-3d</a>
-      can decode (.spz, .ply, .splat, .ksplat) and any character that
-      <code>three.js</code>'s <code>Box3.setFromObject(obj, true)</code> can bound.
+      The whole library is one short JavaScript file. It works with any splat
+      file the popular <a href="https://github.com/mkkellogg/GaussianSplats3D">three.js splat renderer</a>
+      can read (<code>.spz</code>, <code>.ply</code>, <code>.splat</code>, <code>.ksplat</code>),
+      and with any rigged character — Mixamo or otherwise.
     </p>
   </div>
 </section>
@@ -185,11 +185,12 @@
   <div class="container">
     <h2>How it works</h2>
 
-    <h3>Step 1 — Sample splat centroids</h3>
+    <h3>Step 1 — Read where every splat is</h3>
     <p>
-      Iterate the splat's centers via <code>splatMesh.getSplatCenter(i, vec)</code>
-      (mkkellogg API). Stride down to ~30k samples in world space. Each sample is one
-      Gaussian's mean position — collectively they outline every visible surface.
+      A Gaussian splat scene is, mathematically, a cloud of fuzzy ellipsoids. Each
+      ellipsoid has a center point. We read those center points (about 30,000 of
+      them) when the splat first loads. They outline every visible surface in the
+      scene — the floor, the walls, the furniture, the ceiling.
     </p>
 
     <h3>Step 2 — Build the heightmap</h3>
@@ -251,15 +252,39 @@
       <div class="caption">For every cell, sort all nearby splats by Z and take p15 (top of the lowest 15%). Sub-floor outliers fall below; furniture and ceilings sit above. Empty cells are filled from neighbours.</div>
     </div>
 
-    <h3>Step 3 — Per frame, snap the character</h3>
+    <h3>Step 3 — Each frame, snap the character to the floor</h3>
     <p>
-      Update your <code>AnimationMixer</code> first so bones reflect the current frame's
-      pose. Then bilinear-sample the heightmap at the character's <code>(x, y)</code>,
-      compute the live skinned bbox via <code>Box3.setFromObject(walker, true)</code>
-      (precise mode transforms every skinned vertex to world space), and shift
-      <code>walker.position.z</code> so <code>bbox.min.z === floorZ</code>. Whichever
-      foot is lowest at this instant plants on the floor; the swing foot lifts naturally.
+      The character moves through the scene every frame — they walk, they wave,
+      their hips bob, their feet leave the ground and come back. Whatever the
+      animation does, we want one fact to stay true: <em>whichever foot is the
+      lowest right now should be touching the floor</em>.
     </p>
+    <p>
+      So each frame we:
+    </p>
+    <ol style="padding-left: 22px; margin: 8px 0 14px;">
+      <li>Look up the floor height at the character's current <code>(x, y)</code>.</li>
+      <li>Measure the lowest point on the character's body in their current pose.</li>
+      <li>Lift or drop the whole character so that lowest point sits exactly on the floor.</li>
+    </ol>
+    <p>
+      The result: the planted foot stays put, the swing foot lifts naturally, and
+      hips bob without the character ever floating above the ground or sinking
+      through it.
+    </p>
+    <details style="margin-top: 14px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px;">
+      <summary style="cursor: pointer; color: var(--accent); font-weight: 500;">three.js implementation notes</summary>
+      <p style="margin: 10px 0 0; color: var(--fg-dim); font-size: 14px;">
+        For a Mixamo-rigged <code>SkinnedMesh</code> animated by an
+        <code>AnimationMixer</code>: update the mixer first so bones reflect this
+        frame's pose, then take the <em>precise</em> bounding box —
+        <code>Box3.setFromObject(walker, true)</code> — which transforms every
+        skinned vertex into world space rather than reusing the rest-pose box.
+        Bilinear-sample the heightmap at <code>(walker.x, walker.y)</code> for
+        <code>floorZ</code>, then shift <code>walker.position.z</code> by
+        <code>floorZ − bbox.min.z</code>.
+      </p>
+    </details>
   </div>
 </section>
 

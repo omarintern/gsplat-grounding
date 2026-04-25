@@ -168,9 +168,11 @@
       <strong>gsplat-grounding</strong> derives a usable floor surface directly from the
       splat itself, in the browser, at load time. We sample where the splats are,
       figure out which ones make up the floor, and use that as the surface a
-      character walks on. Each frame, whichever foot is lowest gets snapped to
-      that surface — so the planted foot stays planted, the swing foot lifts
-      naturally, and the character doesn't float or sink.
+      character walks on. While the character is on their feet — walking,
+      standing, idling — whichever part of their body is lowest gets snapped to
+      that surface, so the planted foot stays planted and the swing foot lifts
+      naturally. (Jumps, falls and other airborne movement are the caller's
+      concern: stop snapping during the airborne phase, resume on landing.)
     </p>
     <p>
       The whole library is one short JavaScript file. It works with any splat
@@ -252,15 +254,11 @@
       <div class="caption">For every cell, sort all nearby splats by Z and take p15 (top of the lowest 15%). Sub-floor outliers fall below; furniture and ceilings sit above. Empty cells are filled from neighbours.</div>
     </div>
 
-    <h3>Step 3 — Each frame, snap the character to the floor</h3>
+    <h3>Step 3 — Each frame the character is grounded, snap them to the floor</h3>
     <p>
-      The character moves through the scene every frame — they walk, they wave,
-      their hips bob, their feet leave the ground and come back. Whatever the
-      animation does, we want one fact to stay true: <em>whichever foot is the
-      lowest right now should be touching the floor</em>.
-    </p>
-    <p>
-      So each frame we:
+      For grounded animation — walking, standing, idling, sitting — we want
+      one fact to stay true: <em>whichever part of the body is lowest right now
+      should be touching the floor</em>. So each frame we:
     </p>
     <ol style="padding-left: 22px; margin: 8px 0 14px;">
       <li>Look up the floor height at the character's current <code>(x, y)</code>.</li>
@@ -268,9 +266,20 @@
       <li>Lift or drop the whole character so that lowest point sits exactly on the floor.</li>
     </ol>
     <p>
-      The result: the planted foot stays put, the swing foot lifts naturally, and
-      hips bob without the character ever floating above the ground or sinking
-      through it.
+      The result: the planted foot stays put, the swing foot lifts naturally,
+      and hips bob without the character ever floating above the ground or
+      sinking through it.
+    </p>
+    <p>
+      <strong>Airborne animations</strong> — jumps, falls, dives, knockbacks —
+      need the snap turned off during the airborne phase, otherwise the
+      character would skid along the floor with feet always touching. The lib
+      doesn't try to detect airborne vs. grounded automatically; the caller
+      stops invoking <code>groundCharacter()</code> when the current animation
+      isn't a grounded one and resumes on landing. Animation libraries (Mixamo,
+      ActorCore, etc.) typically tag clips with this kind of metadata; if
+      yours doesn't, a per-clip <code>{ grounded: true | false }</code> flag in
+      a small JSON next to your animations is the standard pattern.
     </p>
     <details style="margin-top: 14px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px;">
       <summary style="cursor: pointer; color: var(--accent); font-weight: 500;">three.js implementation notes</summary>
@@ -346,6 +355,7 @@ function tick() {
       <div class="card no">
         <div class="label">✗ doesn't handle</div>
         <ul>
+          <li>airborne motion (jumps, falls) — caller stops snapping during the airborne phase</li>
           <li>multi-floor environments (stairs, balconies)</li>
           <li>walking under tables / overhangs</li>
           <li>walls / lateral collision (only floor)</li>

@@ -110,6 +110,11 @@
     background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px;
     padding: 18px 20px;
   }
+  .card video {
+    width: calc(100% + 40px); margin: -18px -20px 14px;
+    display: block; aspect-ratio: 720 / 368; background: #0a0c10;
+    border-bottom: 1px solid var(--border);
+  }
   .card .label {
     font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em;
     color: var(--fg-dim); margin-bottom: 8px;
@@ -152,11 +157,11 @@
   <div class="container">
     <h2>Abstract</h2>
     <div class="teaser">
-      <picture>
-        <source srcset="docs/teaser.mp4" type="video/mp4">
-        <img src="docs/teaser.png" alt="A character walking through a Marble Labs diner splat, feet planted on the floor as the heightmap derives the surface from splat density."
-             onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder',innerHTML:'<div style=&quot;font-size:24px;margin-bottom:8px;&quot;>▶</div>teaser still — drop a PNG/MP4 at <code>docs/teaser.{png,mp4}</code>'}))">
-      </picture>
+      <video autoplay loop muted playsinline preload="metadata"
+             poster="docs/teaser.png" aria-label="A character walking through a Marble Labs diner splat, feet planted on the floor as the heightmap derives the surface from splat density.">
+        <source src="docs/p15_2.mp4" type="video/mp4">
+        <img src="docs/teaser.png" alt="A character walking through a Marble Labs diner splat with the splat-derived floor heightmap.">
+      </video>
     </div>
     <p>
       Gaussian-splatting captures look great but are notoriously hard to animate against —
@@ -202,6 +207,9 @@
     </p>
     <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px;">
       <div class="card no">
+        <video autoplay loop muted playsinline preload="metadata">
+          <source src="docs/collider.mp4" type="video/mp4">
+        </video>
         <div class="label">approach 1 — collider mesh</div>
         <p style="margin: 0;">
           Marble Labs ships a polygon collider mesh alongside every splat.
@@ -215,6 +223,9 @@
         </p>
       </div>
       <div class="card">
+        <video autoplay loop muted playsinline preload="metadata">
+          <source src="docs/no_ground.mp4" type="video/mp4">
+        </video>
         <div class="label">approach 2 — no floor proxy</div>
         <p style="margin: 0;">
           Pick a sensible constant Z by eye, plant the character there. No
@@ -228,6 +239,9 @@
         </p>
       </div>
       <div class="card ok">
+        <video autoplay loop muted playsinline preload="metadata">
+          <source src="docs/p15.mp4" type="video/mp4">
+        </video>
         <div class="label">approach 3 — splat heightmap (V1)</div>
         <p style="margin: 0;">
           Sample the splat itself for the floor. Per (x, y), gather nearby

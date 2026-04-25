@@ -114,12 +114,12 @@ buildFloorCarpet(hm, { color?, opacity? })
 
 ## Roadmap
 
-This is the first release in a longer effort to make characters aware of Gaussian-splat scenes the way they're aware of hand-authored worlds.
+The lib's scope is producing a floor heightmap from a splat. Improvements have to feed that scope.
 
-- **V1 (this release) — Floor awareness.** Character knows where the ground is, follows changes in it (slopes, raised areas, things that protrude from the floor). Kinematic: the lowest body vertex is forced onto the heightmap every frame.
-- **V2 — Physics dynamics on the heightmap.** Replace the kinematic snap with a one-sided collision against the heightmap plus gravity on the character's pivot. Unlocks jumps, falls, knockbacks, dives — any airborne motion. The heightmap stops being a constraint and becomes collision geometry.
-- **V3 — Artefact correction.** Splat reconstructions contain floating wisps and ghost ellipsoids; V3 distinguishes real geometry from noise so the blocked-vs-walkable signal is clean.
-- **V4+ — Object segmentation.** Recognise discrete objects in the splat (chair, door, jukebox) so a character can sit, open, pick up — i.e. *interact* with the scene, not just walk through it.
+- **V1 (this release) — Find the floor.** Sample the splat, locate the densest low band of points per cell, treat that as the walkable surface. Includes a simple kinematic-snap consumer (`groundCharacter`) for convenience.
+- **V2 — Clean the splat noise.** Distinguish real low-z geometry from reconstruction artefacts (floating wisps, ghost ellipsoids) so the floor signal is sharper, especially at the edges of the heightmap.
+
+Out of scope: physics simulation (character controller territory), object recognition (scene-understanding territory), multi-floor environments (would require a different data structure than a single-Z heightmap). Those belong in libraries that *consume* a floor heightmap, not in the one that produces it.
 
 ## Limitations
 

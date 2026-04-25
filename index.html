@@ -192,9 +192,11 @@
           slopes in the captured floor are followed.
         </p>
         <p class="scope">
-          V1 handles indoor scenes with a clear horizontal floor. Jumps,
-          falls, multi-floor environments, and overhangs are out of scope —
-          they're on the roadmap below.
+          The lib's scope is producing a floor heightmap from a splat. What
+          you do with it — kinematic snap, physics, navmesh — is yours.
+          Jumps and falls (character controllers), object recognition (scene
+          understanding), and multi-floor environments aren't part of this
+          lib.
         </p>
       </div>
       <div class="diagram">
@@ -240,9 +242,7 @@
     <h2>Roadmap</h2>
     <ul>
       <li class="now"><span class="v">V1</span><span>find the floor (this release)</span></li>
-      <li><span class="v">V2</span><span>physics on top — jumps, falls, gravity</span></li>
-      <li><span class="v">V3</span><span>clean the splat noise — sharper "blocked vs walkable" signal</span></li>
-      <li><span class="v">V4</span><span>recognise objects — chairs to sit on, doors to open</span></li>
+      <li><span class="v">V2</span><span>clean the splat noise for a sharper floor signal</span></li>
     </ul>
   </div>
 </section>

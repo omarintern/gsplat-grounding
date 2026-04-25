@@ -56,8 +56,9 @@
     border: 1px solid var(--line);
   }
 
-  /* why row */
+  /* why row — wider container so the three videos don't shrink to thumbnails */
   section.why { padding: 80px 0 40px; border-top: 1px solid var(--line); }
+  section.why .container { max-width: 1500px; }
   section.why h2 {
     font-size: 13px; text-transform: uppercase; letter-spacing: 0.18em;
     color: var(--amber); margin-bottom: 28px; font-weight: 600;
@@ -162,7 +163,7 @@
         <video autoplay loop muted playsinline preload="metadata">
           <source src="docs/no_ground.mp4" type="video/mp4">
         </video>
-        <figcaption>No floor logic. Character sinks through.</figcaption>
+        <figcaption>No floor logic. Feet sink through the floor.</figcaption>
       </figure>
       <figure class="win">
         <video autoplay loop muted playsinline preload="metadata">

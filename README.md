@@ -4,14 +4,14 @@ Drop a character into a Gaussian-splat scene and have them walk on the visible f
 
 The floor reference is derived **at runtime, in the browser**, by sampling splat-centroid density. The same `.spz` (or `.ply` / `.splat` / `.ksplat`) acts as both the visual environment and the collision source.
 
-**🟢 Live demo: https://rumaihi111.github.io/gsplat-grounding/**
+**🟢 Live demo: https://omarintern.github.io/gsplat-grounding/**
 
 Drag any splat file onto the page. A capsule character spawns at the world centroid and walks back and forth, feet snapped to the heightmap derived from your splat's data.
 
 ## Run locally
 
 ```bash
-git clone https://github.com/rumaihi111/gsplat-grounding
+git clone https://github.com/omarintern/gsplat-grounding
 cd gsplat-grounding
 python3 -m http.server 8000
 # open http://localhost:8000
